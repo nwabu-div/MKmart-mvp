@@ -11,6 +11,8 @@ from database import Base, engine, get_db
 from models import User, Product, Order, OrderItem
 from schemas import UserCreate, UserLogin, Token, ProductCreate, ProductOut
 
+
+# this is the entry Point 
 app = FastAPI(title="MokoMarket Electronics MVP - Backend Live!")
 
 # Create tables
