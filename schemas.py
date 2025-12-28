@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
+from datetime import datetime
 
 # For creating new user
 class UserCreate(BaseModel):
@@ -46,3 +47,31 @@ class UserLogin(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    
+class OrderItemCreate(BaseModel):
+    product_id: int
+    quantity: int
+    price_at_purchase: float  # price at time of sale
+
+class OrderCreate(BaseModel):
+    items: list[OrderItemCreate]
+
+class OrderItemOut(BaseModel):
+    id: int
+    product_id: int
+    quantity: int
+    price_at_purchase: float
+
+    class Config:
+        from_attributes = True
+
+class OrderOut(BaseModel):
+    id: int
+    total_amount: float
+    status: str
+    created_at: datetime
+    items: list[OrderItemOut]
+
+    class Config:
+        from_attributes = True
+        
