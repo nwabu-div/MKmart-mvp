@@ -5,19 +5,19 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from typing import List
+from collections import defaultdict
 import hashlib
 
 from database import Base, engine, get_db
 from models import User, Product, Order, OrderItem
-from schemas import UserCreate, UserLogin, Token, ProductCreate, ProductOut
+from schemas import UserCreate, UserLogin, Token, ProductCreate, ProductOut, OrderCreate, OrderOut, OrderItemOut
 
-
-# this is the entry Point 
 app = FastAPI(title="MokoMarket Electronics MVP - Backend Live!")
 
-# Create database tables on startup
+# Create tables
 @app.on_event("startup")
 def on_startup():
+    # Create tables if no exist
     Base.metadata.create_all(bind=engine)
 
 # Password hashing
@@ -131,38 +131,88 @@ def list_products(db: Session = Depends(get_db), current_user: User = Depends(ge
 
 # === AI INVENTORY ALERTS ===
 @app.get("/inventory/alerts/")
-def get_inventory_alerts(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    seller_id = current_user.id
+def get_restock_alerts(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    orders = db.query(Order).filter(Order.buyer_id == current_user.id).all()  # or seller_id
     
-    sales_data = db.query(
-        Product.category,
-        OrderItem.quantity
-    ).join(OrderItem, Product.id == OrderItem.product_id)\
-     .join(Order, OrderItem.order_id == Order.id)\
-     .filter(Product.seller_id == seller_id).all()
+    if not orders:
+        return {"message": "No sales yet — start recording orders to get AI restock alerts!"}
     
-    if not sales_data:
-        return {"message": "No sales yet — add some orders to see AI alerts! 📊"}
+    category_sales = defaultdict(float)
+    total_revenue = 0
     
-    category_sales = {}
-    for category, qty in sales_data:
-        category_sales[category] = category_sales.get(category, 0) + qty
+    for order in orders:
+        for item in order.items:
+            product = db.query(Product).filter(Product.id == item.product_id).first()
+            if product:
+                category_sales[product.category] += item.quantity * item.price_at_purchase
+                total_revenue += item.quantity * item.price_at_purchase
     
-    total_sales = sum(category_sales.values())
+    if total_revenue == 0:
+        return {"message": "No revenue yet — keep selling!"}
+    
     top_category = max(category_sales, key=category_sales.get)
-    top_percentage = round((category_sales[top_category] / total_sales) * 100)
+    percentage = (category_sales[top_category] / total_revenue) * 100
     
-    alert = f"{top_category} dey hot! E carry {top_percentage}% of your sales. Restock am sharp sharp! 🔥"
+    message = f"{top_category} dey hot pass! E carry {percentage:.1f}% of your sales — restock {top_category.lower()} sharp sharp before stock finish!! 🔥"
     
     return {
-        "top_selling_category": top_category,
-        "percentage": top_percentage,
-        "alert": alert,
-        "full_breakdown": category_sales
+        "top_category": top_category,
+        "percentage": round(percentage, 1),
+        "message": message,
+        "total_revenue": round(total_revenue, 2)
     }
+
+@app.post("/orders/", response_model=OrderOut)
+def record_sale(order_data: OrderCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    total = 0
+    order_items = []
+
+    for item in order_data.items:
+        product = db.query(Product).filter(
+            Product.id == item.product_id,
+            Product.seller_id == current_user.id
+        ).first()
+        
+        if not product:
+            raise HTTPException(status_code=404, detail=f"Product {item.product_id} not found or not yours")
+        
+        if product.quantity_in_stock < item.quantity:
+            raise HTTPException(status_code=400, detail=f"Not enough stock for {product.name}")
+        
+        # Reduce stock
+        product.quantity_in_stock -= item.quantity
+        
+        # Calculate item total
+        item_total = item.quantity * item.price_at_purchase
+        total += item_total
+        
+        # Create order item
+        db_item = OrderItem(
+            product_id=item.product_id,
+            quantity=item.quantity,
+            price_at_purchase=item.price_at_purchase
+        )
+        order_items.append(db_item)
+    
+    # Create order
+    new_order = Order(
+        buyer_id=current_user.id,  # or seller_id if you wan track seller
+        total_amount=total,
+        status="completed"
+    )
+    db.add(new_order)
+    db.flush()  # get order id
+    
+    # Link items to order
+    for item in order_items:
+        item.order_id = new_order.id
+        db.add(item)
+    
+    db.commit()
+    db.refresh(new_order)
+    
+    return new_order
 
 @app.get("/")
 def home():
-    return {
-        "message": "MokoMarket Electronics MVP Backend dey live! 🚀 Go /docs make you test am"
-    }
+    return {"message": "MokoMarket Electronics MVP Backend Dey Live! Go /docs make you test am 🚀"}
