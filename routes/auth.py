@@ -42,7 +42,7 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
 
     token = create_access_token(
-        {"sub": db_user.email},
+        {"sub": str(db_user.id)},
         timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
