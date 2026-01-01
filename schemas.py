@@ -4,10 +4,11 @@ from datetime import datetime
 
 # For creating new user
 class UserCreate(BaseModel):
-    phone: str
+    phone: Optional[str] = None
     business_name: str
     location: str
     password: str
+    email: str
 
 #For creating nice JSON format the server would send out back to the client/user
 class UserOut(BaseModel):
@@ -41,7 +42,7 @@ class ProductOut(BaseModel):
         from_attributes = True
         
 class UserLogin(BaseModel):
-    phone: str
+    email: str
     password: str
 
 class Token(BaseModel):

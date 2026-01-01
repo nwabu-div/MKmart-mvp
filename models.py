@@ -7,11 +7,11 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True, index=True)
-    phone = Column(String, unique=True, index=True, nullable=False)
+    phone = Column(String, unique=True, index=True, nullable=True)
     business_name = Column(String, nullable=False)
     location = Column(String, nullable=False)
     password_hash = Column(String, nullable=False)
-    
+    email = Column(String, unique=True, index=True, nullable=False)
     #establish two-way relationship between tables
     products = relationship("Product", back_populates="seller")
     orders = relationship("Order", back_populates="buyer")
