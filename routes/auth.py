@@ -29,11 +29,11 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     token = create_access_token(
-        {"sub": user.email},
+        {"sub": str(new_user.id)},
         timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
-    return {"message": "User created successfully", "user_id": new_user.id , "access_token": token}
+    return {"token_type": "token_type", "user_id": new_user.id , "access_token": token}
 
 @router.post("/login", response_model=Token)
 def login(user: UserLogin, db: Session = Depends(get_db)):
@@ -46,4 +46,4 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
         timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
-    return {"access_token": token, "token_type": "bearer"}
+    return {"access_token": token, "token_type": "bearer" , "user_id": db_user.id}
