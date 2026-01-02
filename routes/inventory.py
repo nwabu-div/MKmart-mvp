@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from collections import defaultdict
 
 from database import get_db
 from models import Product, Order, OrderItem, User
@@ -7,46 +8,44 @@ from core.dependencies import get_current_user
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
 
-
 @router.get("/alerts/")
-def get_inventory_alerts(
+def get_restock_alerts(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    seller_id = current_user.id
-
-    sales_data = (
-        db.query(Product.category, OrderItem.quantity)
-        .join(OrderItem, Product.id == OrderItem.product_id)
-        .join(Order, OrderItem.order_id == Order.id)
-        .filter(Product.seller_id == seller_id)
-        .all()
-    )
-
-    if not sales_data:
-        return {
-            "message": "No sales yet — add some orders to see AI alerts! 📊"
-        }
-
-    category_sales = {}
-    for category, qty in sales_data:
-        category_sales[category] = category_sales.get(category, 0) + qty
-
-    total_sales = sum(category_sales.values())
+    # Get all orders for this seller
+    orders = db.query(Order).filter(Order.seller_id == current_user.id).all()
+    
+    if not orders:
+        return {"message": "No sales yet — start recording sales to get smart restock alerts!"}
+    
+    category_sales = defaultdict(float)
+    total_revenue = 0.0
+    
+    for order in orders:
+        for item in order.items:
+            product = db.query(Product).filter(Product.id == item.product_id).first()
+            if product:
+                revenue = item.quantity * item.price_at_purchase
+                category_sales[product.category] += revenue
+                total_revenue += revenue
+    
+    if total_revenue == 0:
+        return {"message": "No revenue recorded yet — keep selling!"}
+    
     top_category = max(category_sales, key=category_sales.get)
-    top_percentage = round(
-        (category_sales[top_category] / total_sales) * 100
+    percentage = (category_sales[top_category] / total_revenue) * 100
+    
+    message = (
+        f"{top_category} dey hot pass! "
+        f"E carry {percentage:.1f}% of your sales — "
+        f"restock {top_category.lower()} sharp sharp before stock finish!! 🔥"
     )
-
-    alert = (
-        f"{top_category} dey hot! "
-        f"E carry {top_percentage}% of your sales. "
-        f"Restock am sharp sharp! 🔥"
-    )
-
+    
     return {
-        "top_selling_category": top_category,
-        "percentage": top_percentage,
-        "alert": alert,
-        "full_breakdown": category_sales
+        "top_category": top_category,
+        "percentage": round(percentage, 1),
+        "total_revenue": round(total_revenue, 2),
+        "message": message,
+        "breakdown": dict(category_sales)
     }
