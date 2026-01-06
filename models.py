@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
+from datetime import datetime
 
 class User(Base):
     __tablename__ = "users"
@@ -12,9 +13,11 @@ class User(Base):
     location = Column(String, nullable=False)
     password_hash = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
-    #establish two-way relationship between tables
+    is_verified = Column(Boolean, default=False)  # New
+    otp_code = Column(String, nullable=True)      # New
+    otp_expires_at = Column(DateTime, nullable=True)  # New
+    
     products = relationship("Product", back_populates="seller")
-    orders = relationship("Order", back_populates="buyer")
 
 class Product(Base):
     __tablename__ = "products"
@@ -23,9 +26,9 @@ class Product(Base):
     name = Column(String, nullable=False)
     description = Column(String)
     price = Column(Float, nullable=False)
-    quantity_in_stock = Column(Integer, default=0)
-    category = Column(String, nullable=False)  # e.g., "Accessories", "Phones"
-    subcategory = Column(String)  # e.g., "Chargers", "Cases"
+    quantity_in_stock = Column(Integer, nullable=False)
+    category = Column(String, nullable=False)
+    subcategory = Column(String, nullable=False)
     image_url = Column(String)
     seller_id = Column(Integer, ForeignKey("users.id"))
     
@@ -36,12 +39,11 @@ class Order(Base):
     __tablename__ = "orders"
     
     id = Column(Integer, primary_key=True, index=True)
-    buyer_id = Column(Integer, ForeignKey("users.id"))
+    seller_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     total_amount = Column(Float, nullable=False)
-    status = Column(String, default="pending")
+    status = Column(String, default="completed")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    buyer = relationship("User", back_populates="orders")
     items = relationship("OrderItem", back_populates="order")
 
 class OrderItem(Base):
