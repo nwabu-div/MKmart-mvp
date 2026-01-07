@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from collections import defaultdict
 
-from database import get_db
-from models import Product, Order, OrderItem, User
+from ..database import get_db
+from ..models import Product, Order, OrderItem, User
 from core.dependencies import get_current_user
 
 router = APIRouter(prefix="/inventory", tags=["Inventory"])
