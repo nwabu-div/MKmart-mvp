@@ -1,8 +1,7 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 from datetime import datetime
 
-# For creating new user
 class UserCreate(BaseModel):
     phone: Optional[str] = None
     business_name: str
@@ -10,52 +9,53 @@ class UserCreate(BaseModel):
     password: str
     email: str
 
-#For creating nice JSON format the server would send out back to the client/user
 class UserOut(BaseModel):
     id: int
     phone: str
     business_name: str
     location: str
-
-    class Config:
-        from_attributes = True  # Allow conversion from SQLAlchemy model to Pydantic
-
-# For creating product
-class ProductCreate(BaseModel):
-    name: str
-    description: Optional[str] = None
-    price: float
-    quantity_in_stock: int
-    category: str
-    subcategory: Optional[str] = None
-
-class ProductOut(BaseModel):
-    id: int
-    name: str
-    price: float
-    quantity_in_stock: int
-    category: str
-    subcategory: Optional[str]
-    seller_id: int
+    email: str
+    is_verified: bool
 
     class Config:
         from_attributes = True
-        
+
 class UserLogin(BaseModel):
-    email: str
+    email: str  # Changed to email
     password: str
 
 class Token(BaseModel):
     access_token: str
     token_type: str
-    
+
+class ProductCreate(BaseModel):
+    name: str
+    description: str
+    price: float
+    quantity_in_stock: int
+    category: str
+    subcategory: str
+
+class ProductOut(BaseModel):
+    id: int
+    name: str
+    description: str
+    price: float
+    quantity_in_stock: int
+    category: str
+    subcategory: str
+    seller_id: int
+
+    class Config:
+        from_attributes = True
+
 class OrderItemCreate(BaseModel):
     product_id: int
     quantity: int
-    price_at_purchase: float  # price at time of sale
+    price_at_purchase: float
 
 class OrderCreate(BaseModel):
-    items: list[OrderItemCreate]
+    items: List[OrderItemCreate]
 
 class OrderItemOut(BaseModel):
     id: int
@@ -71,8 +71,7 @@ class OrderOut(BaseModel):
     total_amount: float
     status: str
     created_at: datetime
-    items: list[OrderItemOut]
+    items: List[OrderItemOut]
 
     class Config:
         from_attributes = True
-        

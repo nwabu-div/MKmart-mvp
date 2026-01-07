@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine
 from routes import auth, products, inventory
 
@@ -8,9 +9,19 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Create tables on startup
+# CORS for frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # or frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Create/drop tables on startup (fix schema on Render)
 @app.on_event("startup")
 def on_startup():
+    Base.metadata.drop_all(bind=engine)  # Fresh start
     Base.metadata.create_all(bind=engine)
 
 # Include routers

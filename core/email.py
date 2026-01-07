@@ -20,36 +20,27 @@ fm = FastMail(conf)
 async def send_otp_email(email_to: EmailStr, otp: str):
     html = f"""
     <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            body {{ font-family: Arial, sans-serif; background-color: #f4f4f4; padding: 20px; }}
-            .container {{ max-width: 600px; margin: auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }}
-            .header {{ background-color: #4CAF50; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
-            .otp {{ font-size: 32px; font-weight: bold; color: #4CAF50; text-align: center; margin: 30px 0; }}
-            .footer {{ margin-top: 40px; font-size: 12px; color: #777; text-align: center; }}
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>MokoMarket</h1>
-            </div>
-            <h2>Hello,</h2>
-            <p>Your verification code is:</p>
-            <div class="otp">{otp}</div>
-            <p>This code expires in 10 minutes.</p>
-            <p>If you didn't request this, please ignore this email.</p>
-            <div class="footer">
-                © {datetime.now().year} MokoMarket. All rights reserved.
-            </div>
+    <html lang="en">
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #4CAF50;">MokoMarket</h1>
+        </div>
+        <div style="background: #f8f8f8; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h2 style="color: #4CAF50;">Email Verification</h2>
+            <p>Hello,</p>
+            <p>Your one-time verification code is:</p>
+            <h1 style="text-align: center; color: #4CAF50;">{otp}</h1>
+            <p>This code expires in 5 minutes. If you didn't request this, please ignore this email.</p>
+        </div>
+        <div style="text-align: center; font-size: 12px; color: #666;">
+            © {datetime.now().year} MokoMarket. All rights reserved.
         </div>
     </body>
     </html>
     """
 
     message = MessageSchema(
-        subject="MokoMarket Email Verification",
+        subject="MokoMarket Email Verification OTP",
         recipients=[email_to],
         body=html,
         subtype="html"
