@@ -9,22 +9,22 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS for frontend
+# Allow frontend to connect
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # or frontend URL
+    allow_origins=["*"],  # Change to your frontend URL later
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Create/drop tables on startup (fix schema on Render)
+# Fresh DB on every deploy (fix old schema error on Render)
 @app.on_event("startup")
 def on_startup():
-    Base.metadata.drop_all(bind=engine)  # Fresh start
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 
-# Include routers
+# Include routes
 app.include_router(auth.router)
 app.include_router(products.router)
 app.include_router(inventory.router)
