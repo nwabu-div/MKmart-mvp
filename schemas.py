@@ -14,6 +14,13 @@ class UserLogin(BaseModel):
     email: str
     password: str
 
+class UserUpdate(BaseModel):
+    phone: Optional[str] = None
+    business_name: Optional[str] = None
+    location: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    
 class UserOut(BaseModel):
     id: int
     phone: Optional[str]

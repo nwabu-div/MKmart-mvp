@@ -4,7 +4,7 @@ from datetime import timedelta
 
 from database import get_db
 from models import User
-from schemas import UserCreate, UserLogin, Token, UserOut
+from schemas import UserCreate, UserLogin, Token, UserOut, UserUpdate
 from core.security import hash_password, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from core.dependencies import get_current_user
 
@@ -54,27 +54,32 @@ def get_profile(current_user: User = Depends(get_current_user)):
     return current_user
 
 # Update My Profile
-# Update My Profile
 @router.patch("/me", response_model=UserOut)
 def update_profile(
-    update_data: UserCreate,
+    update_data: UserUpdate,  # Change from UserCreate to UserUpdate
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if update_data.email and update_data.email != current_user.email:
-        if db.query(User).filter(User.email == update_data.email).first():
-            raise HTTPException(status_code=400, detail="Email already taken")
+    update_dict = update_data.dict(exclude_unset=True)
     
-    if update_data.phone and update_data.phone != current_user.phone:
-        if db.query(User).filter(User.phone == update_data.phone).first():
+    if not update_dict:
+        raise HTTPException(status_code=400, detail="No data provided for update")
+
+    # Special checks for unique fields if they are being changed
+    if "email" in update_dict and update_dict["email"] != current_user.email:
+        if db.query(User).filter(User.email == update_dict["email"]).first():
+            raise HTTPException(status_code=400, detail="Email already taken")
+
+    if "phone" in update_dict and update_dict["phone"] != current_user.phone:
+        if update_dict["phone"] and db.query(User).filter(User.phone == update_dict["phone"]).first():
             raise HTTPException(status_code=400, detail="Phone already taken")
 
-    # Update only fields that are provided
-    for key, value in update_data.dict(exclude_unset=True).items():
-        if key != "password":
-            setattr(current_user, key, value)
-        else:
+    # Apply updates
+    for key, value in update_dict.items():
+        if key == "password" and value:
             setattr(current_user, "password_hash", hash_password(value))
+        elif key != "password":
+            setattr(current_user, key, value)
 
     db.commit()
     db.refresh(current_user)
