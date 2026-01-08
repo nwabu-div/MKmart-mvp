@@ -54,17 +54,22 @@ def get_profile(current_user: User = Depends(get_current_user)):
     return current_user
 
 # Update My Profile
-@router.put("/me", response_model=UserOut)
+# Update My Profile
+@router.patch("/me", response_model=UserOut)
 def update_profile(
     update_data: UserCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if update_data.email != current_user.email and db.query(User).filter(User.email == update_data.email).first():
-        raise HTTPException(status_code=400, detail="Email already taken")
-    if update_data.phone != current_user.phone and update_data.phone and db.query(User).filter(User.phone == update_data.phone).first():
-        raise HTTPException(status_code=400, detail="Phone already taken")
+    if update_data.email and update_data.email != current_user.email:
+        if db.query(User).filter(User.email == update_data.email).first():
+            raise HTTPException(status_code=400, detail="Email already taken")
+    
+    if update_data.phone and update_data.phone != current_user.phone:
+        if db.query(User).filter(User.phone == update_data.phone).first():
+            raise HTTPException(status_code=400, detail="Phone already taken")
 
+    # Update only fields that are provided
     for key, value in update_data.dict(exclude_unset=True).items():
         if key != "password":
             setattr(current_user, key, value)
