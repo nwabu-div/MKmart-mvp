@@ -10,7 +10,7 @@ from core.dependencies import get_current_user
 
 router = APIRouter(prefix="/users", tags=["Users & Auth"])
 
-# Signup
+# Sign up
 @router.post("/signup", response_model=Token)
 def signup(user: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == user.email).first():
@@ -19,12 +19,24 @@ def signup(user: UserCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Phone already registered")
 
     hashed = hash_password(user.password)
-    new_user = User(**user.dict(), password_hash=hashed, is_verified=True)  # Auto verify for now
+
+    user_data = user.dict(exclude={"password"})
+
+    new_user = User(
+        **user_data,
+        password_hash=hashed,
+        is_verified=True  # auto-verify for now
+    )
+
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    token = create_access_token({"sub": str(new_user.id)}, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    token = create_access_token(
+        {"sub": str(new_user.id)},
+        timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
+
     return {"access_token": token, "token_type": "bearer"}
 
 # Login
