@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import Base, engine
-from routes import auth, products, inventory
+from routes import auth, products, inventory, orders
+
 
 app = FastAPI(
     title="MokoMarket Electronics MVP - Backend Live!",
@@ -28,6 +29,7 @@ def on_startup():
 app.include_router(auth.router)
 app.include_router(products.router)
 app.include_router(inventory.router)
+app.include_router(orders.router)
 
 @app.get("/")
 def home():

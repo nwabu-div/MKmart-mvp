@@ -2,6 +2,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 
+# User schemas (already there)
 class UserCreate(BaseModel):
     phone: Optional[str] = None
     business_name: str
@@ -10,7 +11,7 @@ class UserCreate(BaseModel):
     email: str
 
 class UserLogin(BaseModel):
-    email: str  # Now login with email
+    email: str
     password: str
 
 class UserOut(BaseModel):
@@ -28,4 +29,51 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
-# ... rest of product and order schemas remain the same
+# Product schemas (ADD THESE — this na the missing part!)
+class ProductCreate(BaseModel):
+    name: str
+    description: str
+    price: float
+    quantity_in_stock: int
+    category: str
+    subcategory: str
+
+class ProductOut(BaseModel):
+    id: int
+    name: str
+    description: str
+    price: float
+    quantity_in_stock: int
+    category: str
+    subcategory: str
+    seller_id: int
+
+    class Config:
+        from_attributes = True
+
+# Order schemas
+class OrderItemCreate(BaseModel):
+    product_id: int
+    quantity: int
+    price_at_purchase: float  # Price at the time of sale (in case price change later)
+
+class OrderCreate(BaseModel):
+    items: List[OrderItemCreate]  # At least one item
+
+class OrderItemOut(BaseModel):
+    product_id: int
+    quantity: int
+    price_at_purchase: float
+
+    class Config:
+        from_attributes = True
+
+class OrderOut(BaseModel):
+    id: int
+    total_amount: float
+    status: str
+    created_at: datetime
+    items: List[OrderItemOut]
+
+    class Config:
+        from_attributes = True
