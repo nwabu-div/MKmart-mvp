@@ -12,7 +12,7 @@ class User(Base):
     location = Column(String, nullable=False)
     password_hash = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
-    is_verified = Column(Boolean, default=False)  # For future OTP
+    is_verified = Column(Boolean, default=True)  # Auto-verified for MVP — no OTP needed
     created_at = Column(DateTime, default=func.now())
     
     products = relationship("Product", back_populates="seller")
