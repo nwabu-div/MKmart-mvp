@@ -71,3 +71,23 @@ def record_sale(
     db.refresh(new_order)
 
     return new_order
+
+@router.get("/", response_model=List[OrderOut])
+def get_my_orders(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get list of all your recorded sales/orders, newest first
+    """
+    orders = (
+        db.query(Order)
+        .filter(Order.seller_id == current_user.id)
+        .order_by(Order.created_at.desc())
+        .all()
+    )
+    
+    if not orders:
+        return []  # or raise 404 if you prefer, but empty list is fine for MVP
+    
+    return orders

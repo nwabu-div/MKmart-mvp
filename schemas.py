@@ -77,6 +77,7 @@ class OrderItemOut(BaseModel):
 
 class OrderOut(BaseModel):
     id: int
+    seller_id: int
     total_amount: float
     status: str
     created_at: datetime
