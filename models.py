@@ -12,11 +12,13 @@ class User(Base):
     location = Column(String, nullable=False)
     password_hash = Column(String, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
-    is_verified = Column(Boolean, default=True)  # Auto-verified for MVP — no OTP needed
+    is_verified = Column(Boolean, default=False)  # Auto-verified for MVP — no OTP needed
     created_at = Column(DateTime, default=func.now())
     
     products = relationship("Product", back_populates="seller")
     orders = relationship("Order", back_populates="seller")
+    
+    otps = relationship("OTP", back_populates="user")
 
 class Product(Base):
     __tablename__ = "products"
@@ -56,3 +58,14 @@ class OrderItem(Base):
     
     order = relationship("Order", back_populates="items")
     product = relationship("Product", back_populates="order_items")
+class OTP(Base):
+    __tablename__ = "otps"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    code = Column(String(6), nullable=False)          # 6-digit OTP
+    expires_at = Column(DateTime, nullable=False)     # when it expires
+    attempts = Column(Integer, default=0, nullable=False)  # track failed tries
+    created_at = Column(DateTime, default=func.now())
+
+    user = relationship("User", back_populates="otps") 
