@@ -14,30 +14,25 @@ from core.dependencies import get_current_user
 
 router = APIRouter(prefix="/users", tags=["Users & Auth"])
 
-# Sign up
 @router.post("/signup", response_model=Token)
 async def signup(user: UserCreate, db: Session = Depends(get_db)):
-    # Check if email or phone already exists
     if db.query(User).filter(User.email == user.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     if user.phone and db.query(User).filter(User.phone == user.phone).first():
         raise HTTPException(status_code=400, detail="Phone already registered")
 
-    # Hash password and create user
     hashed = hash_password(user.password)
     new_user = User(
         **user.dict(exclude={"password"}),
         password_hash=hashed,
-        is_verified=False  # important!
+        is_verified=False
     )
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
-    # Generate and save OTP
     otp = create_and_save_otp(db, new_user)
 
-    # Send OTP email
     message = MessageSchema(
         subject="MokoMarket - Your Verification Code",
         recipients=[new_user.email],
@@ -46,14 +41,12 @@ async def signup(user: UserCreate, db: Session = Depends(get_db)):
     )
     
     fm = FastMail(conf)
-    await fm.send_message(message)  # send async
+    await fm.send_message(message)
 
-    # Return token (frontend will prompt for OTP next)
     token = create_access_token(
         {"sub": str(new_user.id)},
         timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
-
     return {"access_token": token, "token_type": "bearer"}
 
 class VerifyOTP(BaseModel):
@@ -61,14 +54,12 @@ class VerifyOTP(BaseModel):
 
 @router.post("/verify-otp")
 def verify_otp(
-    data: VerifyOTP,                     # ← now expects JSON body
+    data: VerifyOTP,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     if current_user.is_verified:
         return {"message": "Your email is already verified."}
-
-    from core.otp import verify_otp
 
     if verify_otp(db, current_user.id, data.code):
         current_user.is_verified = True
@@ -78,10 +69,9 @@ def verify_otp(
     else:
         raise HTTPException(
             status_code=400,
-            detail="Invalid or expired OTP. Please request a new one."
+            detail="Invalid or expired OTP. Please signup again if needed."
         )
 
-# Login
 @router.post("/login", response_model=Token)
 def login(user: UserLogin, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()

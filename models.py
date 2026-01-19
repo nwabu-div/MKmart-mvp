@@ -58,14 +58,15 @@ class OrderItem(Base):
     
     order = relationship("Order", back_populates="items")
     product = relationship("Product", back_populates="order_items")
+
 class OTP(Base):
     __tablename__ = "otps"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    code = Column(String(6), nullable=False)          # 6-digit OTP
-    expires_at = Column(DateTime, nullable=False)     # when it expires
-    attempts = Column(Integer, default=0, nullable=False)  # track failed tries
+    code = Column(String(6), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    attempts = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=func.now())
 
-    user = relationship("User", back_populates="otps") 
+    user = relationship("User", back_populates="otps")
