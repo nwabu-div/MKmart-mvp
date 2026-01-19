@@ -16,7 +16,8 @@ def create_and_save_otp(db: Session, user: User) -> OTP:
         user_id=user.id,
         code=code,
         expires_at=expires_at,
-        attempts=0
+        attempts=0,
+        last_resend_at=None
     )
     
     db.add(otp)
