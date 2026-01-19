@@ -22,7 +22,7 @@ app.add_middleware(
 # Fresh DB on every deploy (fix old schema error on Render)
 @app.on_event("startup")
 def on_startup():
-    Base.metadata.drop_all(bind=engine)
+    #Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 
 # Include routes

@@ -6,3 +6,4 @@ python-dotenv==1.0.1
 passlib[argon2]
 python-jose[cryptography]==3.3.0
 fastapi-mail==1.4.1
+psycopg2-binary>=2.9.9
